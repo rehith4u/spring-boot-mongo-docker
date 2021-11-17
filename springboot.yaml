@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: ReplicationController
+metadata:
+  labels:
+    name: springapp
+spec:
+  replicas: 2
+  template:
+    metadata:
+      name: springapppod
+      labels:
+        app: springapp
+    spec:
+      containers:
+      - name: springappcontainer
+        image: rehith4u/spring-boot-mongo
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: springappsvc
+spec:
+  selector:
+    name: springapp
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: NodePort
+---
+# Mongo db pod with volumes(HostPath)
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  labels:
+    name: mongodbrs
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: mongodbpod
+    spec:
+      containers:
+      - name: mongodbcontainer
+        image: mongo
+      ports:
+        containerPort: 27017
+        hostPort: 27017
+      volumeMounts:
+      - name: mongodb-pvc
+        mountPath: /data/db
+    volumes:
+    - name: mongodb-pvc
+      hostPath:
+        path: /tmp/dbbackup
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongosvc
+spec:
+  type: ClusterIP
+  selector:
+    name: mongodbrs
+  ports:
+  - port: 27017
+    targetPort: 27017
